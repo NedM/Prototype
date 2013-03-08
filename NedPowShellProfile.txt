@@ -1,0 +1,45 @@
+#edit by typing "notepad $profile" in PowerShell window
+function GoTo([string]$location)
+{
+    if($location -eq "")
+    {
+        Get-ChildItem Env:
+    }
+    else
+    {                
+        if((Get-ChildItem Env: | Where-Object { $_.Name -eq $location }).Count -gt 0)
+        {
+            $path = Get-Item Env:$location
+            Push-Location $path.Value
+        }
+    }
+}
+
+function GoUp([int]$numDirs = 1){
+    if($numDirs -gt 0)
+    {
+	Push-Location ..
+	for($i=2; $i -le $numDirs; $i++){ cd.. }
+    }
+}
+
+function GoToRoot{
+    Push-Location C:\dev\levelup
+}
+
+function FindString($string, $extensionFilter){
+    Get-ChildItem -Recurse -Include $extensionFilter | Select-String $string | Sort-Object -Property Path | Format-Table -AutoSize -Property LineNumber,Path
+}
+
+function FindFiles($partialFileName){
+    Get-ChildItem -Recurse -Filter $partialFileName | Sort-Object -Property Path | Format-Table -Property Directory 
+}
+
+Set-Alias root GoToRoot
+Set-Alias n "${env:ProgramFiles(x86)}\Notepad++\notepad++.exe"
+Set-Alias np "notepad.exe"
+Set-Alias vs "${env:ProgramFiles(x86)}\Microsoft Visual Studio 11.0\Common7\IDE\devenv.exe"
+Set-Alias up GoUp
+Set-Alias go GoTo
+Set-Alias fstr findString
+Set-Alias ffile FindFiles
