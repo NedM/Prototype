@@ -11,8 +11,14 @@ namespace Prototype
     {
         public static void Main(string[] args)
         {
-            Program.TestFileOrdering();
+            //Program.TestFileOrdering();
             //Program.TestTimerBehavior();
+
+            string levelUp = "LU02000HZITLP4UP3VD81FZG020009LU";
+            Console.WriteLine(levelUp);
+            string snip = levelUp.Remove(2, levelUp.Length - 4);
+            Console.WriteLine(snip);
+            Console.WriteLine(snip.Insert(2, "[LevelUp Customer QR Data Omitted]"));
         }
 
         private static void TestTimerBehavior()
