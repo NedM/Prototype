@@ -13,12 +13,13 @@ namespace Prototype
         {
             //Program.TestFileOrdering();
             //Program.TestTimerBehavior();
+            Program.TestStringFormatting();
 
-            string levelUp = "LU02000HZITLP4UP3VD81FZG020009LU";
-            Console.WriteLine(levelUp);
-            string snip = levelUp.Remove(2, levelUp.Length - 4);
-            Console.WriteLine(snip);
-            Console.WriteLine(snip.Insert(2, "[LevelUp Customer QR Data Omitted]"));
+            //string levelUp = "LU02000HZITLP4UP3VD81FZG020009LU";
+            //Console.WriteLine(levelUp);
+            //string snip = levelUp.Remove(2, levelUp.Length - 4);
+            //Console.WriteLine(snip);
+            //Console.WriteLine(snip.Insert(2, "[LevelUp Customer QR Data Omitted]"));
         }
 
         private static void TestTimerBehavior()
@@ -61,6 +62,14 @@ namespace Prototype
             {
                 Console.WriteLine(string.Format("  {0} created on {1} last edited at {2}", fi.Name, fi.CreationTime.Date.ToShortDateString(), fi.LastWriteTime));
             }
+        }
+
+        private static void TestStringFormatting()
+        {
+            decimal decimalVal = (decimal)0.05;
+            int intVal = decimal.ToInt32(decimalVal*100);
+            Console.WriteLine("Currency format: {0:C2}", decimalVal);
+            Console.WriteLine("Fixed point format: {0:F2}", decimalVal);
         }
     }
 }
