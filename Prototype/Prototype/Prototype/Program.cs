@@ -12,8 +12,8 @@ namespace Prototype
         public static void Main(string[] args)
         {
             //Program.TestFileOrdering();
-            //Program.TestTimerBehavior();
-            Program.TestStringFormatting();
+            Program.TestTimerBehavior();
+            //Program.TestStringFormatting();
 
             //string levelUp = "LU02000HZITLP4UP3VD81FZG020009LU";
             //Console.WriteLine(levelUp);
@@ -40,7 +40,9 @@ namespace Prototype
 
         private static void OnTimerEvent(object source, System.Timers.ElapsedEventArgs e)
         {
-            Console.WriteLine(string.Format("Timer fired at {0}:{1}:{2}", DateTime.Now.Hour.ToString(), DateTime.Now.Minute.ToString(), DateTime.Now.Second.ToString()));
+
+            Console.WriteLine("Timer fired at {0}", e.SignalTime.ToString("T"));
+            //Console.WriteLine("Extra Data: ");
         }
 
         private static void TestFileOrdering(string directory = "", string pattern = "*.*")
@@ -68,8 +70,11 @@ namespace Prototype
         {
             decimal decimalVal = (decimal)0.05;
             int intVal = decimal.ToInt32(decimalVal*100);
+            Console.WriteLine("Integer value: {0}", intVal);
             Console.WriteLine("Currency format: {0:C2}", decimalVal);
             Console.WriteLine("Fixed point format: {0:F2}", decimalVal);
+            decimal newDecimal = ((decimal)intVal) / 100;
+            Console.WriteLine("New Decimal value: {0:F2}", newDecimal);
         }
     }
 }
