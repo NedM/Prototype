@@ -1,9 +1,10 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Braintree;
+using Environment = System.Environment;
 
 namespace Prototype
 {
@@ -11,8 +12,114 @@ namespace Prototype
     {
         public static void Main(string[] args)
         {
+            Program.TestAlohaItems();
+
+            //var gateway = new Braintree.BraintreeGateway
+            //    {
+            //        Environment = Braintree.Environment.SANDBOX,
+            //        PublicKey = "MIIBCgKCAQEAsWqrT3RkCyH6yF7ir/lphFcc/lKk792OG5sCGW2dZW3A0NDVoNOpoP0Qj6S0uqgT5higISchdJKSaqurE0fBzqpys0n+o3jTShOxsAS+k1urH7kPtW3DSw9HPVZuKkY+C8a3JcfkFb7OLQsolDGmJdI7BLlt/KB52Z7rP2EqsjqrI+HMLgjN8zWnAl6RbAFNyAsHniww8z/z1BcXhen9UTr9LXcbhZjVjsOrGNR7Ylc2uaLbg/NRuEImXhGc53Dd0DSeKocEG4jdrwZSQFVZjf2D+Hoj11bivkhrd1dwa43rik4cr4qEOlRIdq/DbIroq2tTn46nwOmPd8cFSbu81wIDAQAB",
+            //        PrivateKey = "",
+            //        MerchantId = "",
+            //    };
+
+            //var encryptedValue = gateway.CreditCard.Create(new CreditCardRequest
+            //    {
+            //        CVV = "1234",
+            //        ExpirationMonth = "10",
+            //        ExpirationYear = "2014",
+            //        Number = "546546545456",
+            //    });
+
+            //int g = 2;
+            //int m = 35;
+
+            //bool testBool = false;
+            //int myInt = 123;
+            //string str = "test string";
+            //object obj = str;
+
+            //try
+            //{
+            //    try
+            //    {
+            //        myInt = (int) obj;
+
+            //        Console.WriteLine("Inside the try.");
+            //        testBool = true;
+            //    }
+            //    finally
+            //    {
+            //        Console.WriteLine("In the finally block! Test bool is {0}", testBool);
+            //    }
+
+            //    Console.WriteLine("After the finally. Test bool is {0}", testBool);
+            //}
+            //catch (Exception ex)
+            //{
+            //    Console.WriteLine("Caught Exception.");
+            //}
+
+            //for (int o = 1; o < m; o++)
+            //{
+            //    if (Math.Pow(g, o)%m == 1)
+            //    {
+            //        Console.WriteLine("{0}^{1} mod {2} = 1", g, o, m);
+            //        break;
+            //    }
+            //}
+
+
+            //bool foundIt = false;
+            //int x = 7;
+            //int y = 23;
+            //int z = 23;
+
+            //for (int a = 1; a < 100; a++)
+            //{
+            //    for (int b = -100; b < 100; b++)
+            //    {
+            //        int result = (x*a + y*b); //%z;
+            //        if (result == 1)
+            //        {
+            //            Console.WriteLine("Found it!");
+            //        }
+
+            //        Console.WriteLine("a = {0}, b = {1}, Result = {2}", a, b, result);
+
+            //        if (result == 1)
+            //        {
+            //            foundIt = true;
+            //            break;
+            //        }
+            //    }
+
+            //    if (foundIt)
+            //    {
+            //        break;
+            //    }
+            //}
+
+            //int n = 35;
+            //int count = 0;
+            //for (int i = 1; i < n; i++)
+            //{
+            //    if (CryptoUtils.GCD(i, n) == 1)
+            //    {
+            //        Console.WriteLine("{0} is relatively prime with {1}", i, n);
+            //        count++;
+            //    }
+            //    else
+            //    {
+            //        Console.WriteLine("{0} has factors in common with {1}", i, n);
+            //    }
+            //}
+            //Console.WriteLine("Set of relative primes to {0} contains {1} elements", n, count);
+
+            //Address address = new Address("Puyao", "850 Mass. ave.", "Apt. 5", "Cambridge", "MA", string.Empty, "02139", coordinates: new GeographicLocation(123, 321));
+            //address.GeographicCoordinates.Latitude = 999;
+            //Console.WriteLine(address.ToString());
             //Program.TestFileOrdering();
-            Program.TestTimerBehavior();
+            //Program.TestTimerBehavior();
             //Program.TestStringFormatting();
 
             //string levelUp = "LU02000HZITLP4UP3VD81FZG020009LU";
@@ -24,7 +131,7 @@ namespace Prototype
 
         private static void TestTimerBehavior()
         {
-            System.Timers.Timer tmr = new System.Timers.Timer(1000 * 2);  //2 second timer
+            System.Timers.Timer tmr = new System.Timers.Timer(1000*2); //2 second timer
 
             tmr.Elapsed += new System.Timers.ElapsedEventHandler(OnTimerEvent);
 
@@ -59,22 +166,115 @@ namespace Prototype
                                                            .ToArray();
             FileInfo[] filesCreatedToday = files.Where(f => f.CreationTime.Date.Equals(DateTime.Now.Date)).ToArray();
             FileInfo[] filesWrittenToday = files.Where(f => f.LastWriteTime.Date.Equals(DateTime.Now.Date)).ToArray();
-            Console.WriteLine(string.Format("Found {0} files. {1} of them was/were created today. {2} was/were last edited today.", files.Length, filesCreatedToday.Length, filesWrittenToday.Length));
+            Console.WriteLine(
+                string.Format("Found {0} files. {1} of them was/were created today. {2} was/were last edited today.",
+                              files.Length, filesCreatedToday.Length, filesWrittenToday.Length));
             foreach (FileInfo fi in files)
             {
-                Console.WriteLine(string.Format("  {0} created on {1} last edited at {2}", fi.Name, fi.CreationTime.Date.ToShortDateString(), fi.LastWriteTime));
+                Console.WriteLine(string.Format("  {0} created on {1} last edited at {2}", fi.Name,
+                                                fi.CreationTime.Date.ToShortDateString(), fi.LastWriteTime));
             }
         }
 
         private static void TestStringFormatting()
         {
-            decimal decimalVal = (decimal)0.05;
+            decimal decimalVal = (decimal) 0.05;
             int intVal = decimal.ToInt32(decimalVal*100);
             Console.WriteLine("Integer value: {0}", intVal);
             Console.WriteLine("Currency format: {0:C2}", decimalVal);
             Console.WriteLine("Fixed point format: {0:F2}", decimalVal);
-            decimal newDecimal = ((decimal)intVal) / 100;
+            decimal newDecimal = ((decimal) intVal)/100;
             Console.WriteLine("New Decimal value: {0:F2}", newDecimal);
+        }
+
+        private static void TestAlohaItems()
+        {
+            List<AlohaItemTest> items = new List<AlohaItemTest>()
+                {
+                    new AlohaItemTest("Burger", 0),
+                    new AlohaItemTest("Fries", 0),
+                    new AlohaItemTest("Extra Salt", 1),
+                    new AlohaItemTest("invalid item", 0, false),
+                    new AlohaItemTest("Soup", 0),
+                    new AlohaItemTest("Chowdah", 1),
+                    new AlohaItemTest("Clam", 1),
+                    new AlohaItemTest("Extra oyster crackers", 2),
+                    new AlohaItemTest("Cold", 1),
+                };
+            
+            List<ConvertedItem> converted = BuildItemList(new Queue<AlohaItemTest>(items));
+
+            foreach (var convertedItem in converted)
+            {
+                Console.WriteLine(convertedItem.ToString());
+            }
+        }
+
+        private static List<ConvertedItem> BuildItemList(Queue<AlohaItemTest> items)
+        {
+            List<ConvertedItem> convertedItems = new List<ConvertedItem>();
+
+            if (null == items)
+            {
+                throw new ArgumentException("NULL item list!");
+            }
+
+            while (items.Count > 0)
+            {
+                ConvertedItem current = ConvertedItem.FromAlohaItem(items.Dequeue());
+
+                if (items.Count == 0)
+                {
+                    convertedItems.Add(current);
+                    return convertedItems;
+                }
+
+                AlohaItemTest next = items.Peek();
+
+                while (!next.IsValid)
+                {
+                    items.Dequeue(); //remove the invalid item
+
+                    if (items.Count > 0)
+                    {
+                        next = items.Peek();
+                    }
+                    else
+                    {
+                        convertedItems.Add(current);
+                        return convertedItems;
+                    }
+                }
+
+                if (current.Level < next.Level)
+                {
+                    //Construct the sub item list
+                    List<ConvertedItem> children = BuildItemList(items);
+                    //Add all the sub items to the parent item
+                    current.SubItems.AddRange(children);
+
+                    //Add the parent to the output
+                    convertedItems.Add(current);
+
+                    continue;
+                }
+                else if (current.Level > next.Level)
+                {
+                    //Add the parent to the output
+                    convertedItems.Add(current);
+
+                    return convertedItems;
+                }
+                else //parent.Level == next.Level
+                {
+                    //Add the parent to the output
+                    convertedItems.Add(current);
+
+                    continue;
+                }
+            }
+
+            return convertedItems;
         }
     }
 }
