@@ -191,15 +191,25 @@ namespace Prototype
         {
             List<AlohaItemTest> items = new List<AlohaItemTest>()
                 {
+                    new AlohaItemTest("invalid item 1", 0, false),
                     new AlohaItemTest("Burger", 0),
                     new AlohaItemTest("Fries", 0),
                     new AlohaItemTest("Extra Salt", 1),
                     new AlohaItemTest("invalid item", 0, false),
+                    new AlohaItemTest("invalid sub item", 1, false),
                     new AlohaItemTest("Soup", 0),
+                    new AlohaItemTest("invalid sub item 2", 1, false),
                     new AlohaItemTest("Chowdah", 1),
-                    new AlohaItemTest("Clam", 1),
+                    new AlohaItemTest("Clam", 2),
                     new AlohaItemTest("Extra oyster crackers", 2),
                     new AlohaItemTest("Cold", 1),
+                    new AlohaItemTest("Really Cold", 2),
+                    new AlohaItemTest("Large", 1),
+                    new AlohaItemTest("Bowl", 1),
+                    new AlohaItemTest("Bread", 2),
+                    new AlohaItemTest("Wheat", 3),
+                    new AlohaItemTest("Pepsi Cola", 0),
+                    new AlohaItemTest("Large", 1),
                 };
             
             List<ConvertedItem> converted = BuildItemList(new Queue<AlohaItemTest>(items));
@@ -213,6 +223,7 @@ namespace Prototype
         private static List<ConvertedItem> BuildItemList(Queue<AlohaItemTest> items)
         {
             List<ConvertedItem> convertedItems = new List<ConvertedItem>();
+            ConvertedItem current = null;
 
             if (null == items)
             {
@@ -221,60 +232,107 @@ namespace Prototype
 
             while (items.Count > 0)
             {
-                ConvertedItem current = ConvertedItem.FromAlohaItem(items.Dequeue());
-
-                if (items.Count == 0)
+                //Check to see that the next item is not a higher level than the current Item
+                if (IsNextItemHigherLevel(current, items.Peek()))
                 {
-                    convertedItems.Add(current);
+                    //If the next item it still higher level than current, return the output list
                     return convertedItems;
                 }
 
-                AlohaItemTest next = items.Peek();
-
-                while (!next.IsValid)
+                current = DequeueNextValidItem(items);
+                if (null == current)
                 {
-                    items.Dequeue(); //remove the invalid item
-
-                    if (items.Count > 0)
-                    {
-                        next = items.Peek();
-                    }
-                    else
-                    {
-                        convertedItems.Add(current);
-                        return convertedItems;
-                    }
+                    return convertedItems;
                 }
 
+                convertedItems.Add(current);
+
+                AlohaItemTest next = PeekNextValidItem(items);
+                if (null == next)
+                {
+                    //current item is last valid item in input list.
+                    return convertedItems;
+                }
+
+                //next item is higher level than current.
+                //Unwrap the stack and return the output list
+                if (current.Level > next.Level)
+                {
+                    //Return the list with sub items all filled
+                    return convertedItems;
+                }
+
+                //next item is lower level than current
+                //Recusively build the sub item list
                 if (current.Level < next.Level)
                 {
-                    //Construct the sub item list
-                    List<ConvertedItem> children = BuildItemList(items);
                     //Add all the sub items to the parent item
-                    current.SubItems.AddRange(children);
-
-                    //Add the parent to the output
-                    convertedItems.Add(current);
-
-                    continue;
-                }
-                else if (current.Level > next.Level)
-                {
-                    //Add the parent to the output
-                    convertedItems.Add(current);
-
-                    return convertedItems;
-                }
-                else //parent.Level == next.Level
-                {
-                    //Add the parent to the output
-                    convertedItems.Add(current);
-
-                    continue;
+                    current.SubItems.AddRange(BuildItemList(items));
                 }
             }
 
             return convertedItems;
+        }
+
+        private static ConvertedItem DequeueNextValidItem(Queue<AlohaItemTest> items)
+        {
+            if (items == null || items.Count == 0)
+            {
+                throw new ArgumentException("NULL or empty items list!");
+            }
+
+            AlohaItemTest alohaItem = items.Dequeue();
+
+            //Remove invalid items
+            while (!alohaItem.IsValid)
+            {
+                if (items.Count == 0)
+                {
+                    return null;
+                }
+
+                alohaItem = items.Dequeue(); //remove the invalid item
+            }
+
+            return ConvertedItem.FromAlohaItem(alohaItem);
+        }
+
+        private static AlohaItemTest PeekNextValidItem(Queue<AlohaItemTest> items)
+        {
+            if (null == items)
+            {
+                throw new ArgumentNullException("items");
+            }
+
+            if (items.Count == 0)
+            {
+                return null;
+            }
+
+            AlohaItemTest nextValidItem = items.Peek();
+
+            //Check next item for validity
+            while (!nextValidItem.IsValid)
+            {
+                items.Dequeue(); //remove the invalid item
+
+                if (items.Count > 0)
+                {
+                    nextValidItem = items.Peek();
+                }
+                else
+                {
+                    //current item is last valid item in input list.
+                    return null;
+                }
+            }
+
+            return nextValidItem;
+        }
+
+        private static bool IsNextItemHigherLevel(ConvertedItem current, AlohaItemTest next)
+        {
+            return null != current && current.Level > next.Level;
         }
     }
 }
