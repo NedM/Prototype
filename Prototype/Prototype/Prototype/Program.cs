@@ -12,8 +12,6 @@ namespace Prototype
     {
         public static void Main(string[] args)
         {
-            Program.TestAlohaItems();
-
             //var gateway = new Braintree.BraintreeGateway
             //    {
             //        Environment = Braintree.Environment.SANDBOX,
@@ -114,19 +112,6 @@ namespace Prototype
             //    }
             //}
             //Console.WriteLine("Set of relative primes to {0} contains {1} elements", n, count);
-
-            //Address address = new Address("Puyao", "850 Mass. ave.", "Apt. 5", "Cambridge", "MA", string.Empty, "02139", coordinates: new GeographicLocation(123, 321));
-            //address.GeographicCoordinates.Latitude = 999;
-            //Console.WriteLine(address.ToString());
-            //Program.TestFileOrdering();
-            //Program.TestTimerBehavior();
-            //Program.TestStringFormatting();
-
-            //string levelUp = "LU02000HZITLP4UP3VD81FZG020009LU";
-            //Console.WriteLine(levelUp);
-            //string snip = levelUp.Remove(2, levelUp.Length - 4);
-            //Console.WriteLine(snip);
-            //Console.WriteLine(snip.Insert(2, "[LevelUp Customer QR Data Omitted]"));
         }
 
         private static void TestTimerBehavior()
