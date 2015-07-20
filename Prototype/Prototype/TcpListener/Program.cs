@@ -2,7 +2,6 @@
 using System;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 
 namespace PrototypeTcpListener
 {
@@ -29,7 +28,8 @@ namespace PrototypeTcpListener
 
             if (_ipAddress == null)
             {
-                IPHostEntry host = Dns.GetHostEntry(Dns.GetHostName());
+                string hostName = Dns.GetHostName();
+                IPHostEntry host = Dns.GetHostEntry(hostName);
 
                 foreach (IPAddress ip in host.AddressList)
                 {
@@ -81,23 +81,25 @@ namespace PrototypeTcpListener
                         data = System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRead);
                         Console.WriteLine("Received: {0}", data);
 
-                        string response = "Message received and understood.";
+                        string response = string.Format("Message \"{0}\" received and understood.{1}",
+                                                        data.Trim(),
+                                                        Environment.NewLine);
                         byte[] responseBytes = System.Text.Encoding.ASCII.GetBytes(response);
 
                         stream.Write(responseBytes, 0, response.Length);
                         Console.WriteLine("Sent: {0}", response);
-
-                        Console.WriteLine("Press [ENTER] to continue. Type \"exit\" to quit:");
-                        string userInput = Console.ReadLine();
-                        if (userInput.ToLower().CompareTo("exit") == 0)
-                        {
-                            listen = false;
-                            Console.WriteLine("Stopping the TCP listener loop...");
-                        }
                     }
 
                     //Close the connection
                     clientConnection.Close();
+
+                    Console.WriteLine("Press [ENTER] to continue. Type \"exit\" to quit:");
+                    string userInput = Console.ReadLine();
+                    if (userInput.ToLower().CompareTo("exit") == 0)
+                    {
+                        listen = false;
+                        Console.WriteLine("Stopping the TCP listener loop...");
+                    }
                 }
             }
             catch (SocketException sockEx)
