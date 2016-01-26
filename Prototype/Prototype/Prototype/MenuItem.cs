@@ -2,9 +2,9 @@
 
 namespace Prototype
 {
-    public class AlohaItemTest : IComparable
+    public class MenuItem : IComparable
     {
-        public AlohaItemTest(string name, int level, bool isValid = true)
+        public MenuItem(string name, int level, bool isValid = true)
         {
             this.Name = name;
             this.Level = level;
@@ -22,15 +22,15 @@ namespace Prototype
 
         public int CompareTo(object obj)
         {
-            if (!(obj is AlohaItemTest))
+            if (!(obj is MenuItem))
             {
                 throw new InvalidOperationException(string.Format("Cannot compare types {0} and {1}", this.GetType(), obj.GetType()));
             }
 
-            return CompareTo(obj as AlohaItemTest);
+            return CompareTo(obj as MenuItem);
         }
 
-        public int CompareTo(AlohaItemTest otherItem)
+        public int CompareTo(MenuItem otherItem)
         {
             if (null == otherItem)
             {
@@ -41,14 +41,8 @@ namespace Prototype
             {
                 return 0;
             }
-            else if (otherItem.Level < this.Level)
-            {
-                return 1;
-            }
-            else
-            {
-                return -1;
-            }
+
+            return (otherItem.Level < this.Level) ? 1 : -1;
         }
     }
 }

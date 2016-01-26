@@ -9,6 +9,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Braintree;
@@ -27,9 +28,16 @@ namespace Prototype
         
         public static void Main(string[] args)
         {
+            Console.WriteLine("0: {0}, 1: {1}, 2: {2}, NULL: {3}",
+                              Convert.ToBoolean(0) ? "TRUE" : "FALSE",
+                              Convert.ToBoolean(1) ? "TRUE" : "FALSE",
+                              Convert.ToBoolean(2) ? "TRUE" : "FALSE",
+                              Convert.ToBoolean(null) ? "TRUE" : "FALSE");
             //Console.WriteLine("Environment.NewLine does{0} count as empty string.", string.IsNullOrEmpty(Environment.NewLine) ? null : " NOT");
             //Console.WriteLine(null + "This is a test of the null value.");
-            //Console.WriteLine("True: {0}, False: {1}", Convert.ToInt32(true), Convert.ToInt32(false));
+            Console.WriteLine("True: {0}, False: {1}", Convert.ToInt32(true), Convert.ToInt32(false));
+
+            TestPassByReference();
             //TestRedactMethod();
             //TestTimerBehavior();
             //TestThreadPoolBehavior();
@@ -38,14 +46,133 @@ namespace Prototype
             //TestInheritance();
             //TestCollections();
             //TestCollectionsInheritance();
+            //TestNumberTruncation();
             //TestRefNumberRollover(true);
             //TestUriBuilder();
             //IterateThrough2dArray();
-            AsyncProgramming();
+            //AsyncProgramming();
+
+            //string test = "1a2b3c4d5e6f";
+            
+            //Console.WriteLine("Original: {0}, Substring(0,6): {1}, Substring(6): {2}", test, test.Substring(0, 6), test.Substring(6));
+            //Console.WriteLine("Date YYMMDD format: {0}", DateTime.Now.ToString("yyMMdd", CultureInfo.InvariantCulture));
+            Console.WriteLine("Runtime version: " + System.Environment.Version);
         }
 
+        private static void TestPassByReference()
+        {
+            Blittable blit = new Blittable()
+                {
+                    Data = 100,
+                };
+
+            GCHandle handle = GCHandle.Alloc(blit, GCHandleType.Pinned);
+            IntPtr address = handle.AddrOfPinnedObject();
+            Console.WriteLine(address.ToString("x") + " <- Before pass by value. Value: " + blit.Data);
+
+            MyPassByValueMethod(blit);
+
+            address = handle.AddrOfPinnedObject();
+            Console.WriteLine(address.ToString("x") + " <- After pass by value. Value: " + blit.Data);
+
+            MyPassByReferenceMethod(ref blit);
+
+            address = handle.AddrOfPinnedObject();
+            Console.WriteLine(address.ToString("x") + " <- After pass by ref. Value: " + blit.Data);
+
+            handle.Free();
+        }
+
+        private static void MyPassByValueMethod(Blittable x)
+        {
+            //x = null;
+            //x.Data = 5;
+            x = new Blittable(){ Data = 0 };
+
+            GCHandle handle = GCHandle.Alloc(x, GCHandleType.Pinned);
+            IntPtr address = handle.AddrOfPinnedObject();
+            Console.WriteLine(address.ToString("x") + " <- MyPassByValueMethod. Value: " + x.Data);
+            handle.Free();
+        }
+
+        private static void MyPassByReferenceMethod(ref Blittable y)
+        {
+            //y = null;
+            //y.Data = 2;
+            y = new Blittable()
+                {
+                    Data = 345,
+                };
+
+            GCHandle handle = GCHandle.Alloc(y, GCHandleType.Pinned);
+            IntPtr address = handle.AddrOfPinnedObject();
+            Console.WriteLine(address.ToString("x") + " <- MyPassByReferenceMethod. Value: " + y.Data);
+            handle.Free();
+        }
+
+        private static void TestMultiDimensionalArrays()
+        {
+            string[,] rectArray = new string[,]
+                {
+                    {"name1", "param1", "value1"},
+                    {"name2", "param2", "value2"},
+                };
+
+            for (int i = 0; i < rectArray.GetLongLength(0); i++)
+            {
+                Console.WriteLine("Name: {0}, Key: {1}, Value: {2}", rectArray[i, 0], rectArray[i, 1], rectArray[i, 2]);
+            }
+
+            string[][] jagArray = new string[][]
+                {
+                    new string[3] {"Alice", "Aaron", "Arthur"},
+                    new string[4] {"Bob", "Beth", "Bartholemew", "Buford"}
+                };
+
+            for (int i = 0; i < jagArray.GetLongLength(0); i++)
+            {
+                StringBuilder sb = new StringBuilder(string.Format("Row {0}:", i));
+
+                foreach (string s in jagArray[i])
+                {
+                    sb.Append(" " + s);
+                }
+
+                Console.WriteLine(sb.ToString());
+            }
+        }
+
+        private static void TestNumberTruncation()
+        {
+            int random = new Random((int) DateTime.Now.Ticks).Next(100000000);
+
+            string randomAsString = random.ToString();
+            string temp = random.ToString("D5");
+            string trunc = temp.Substring(temp.Length - 5, 5);
+
+            Console.WriteLine("{0} is {1} characters long.\tTruncated {2} is {3} characters long.", 
+                randomAsString, 
+                randomAsString.Length,
+                trunc,
+                trunc.Length);
+
+            int random1 = new Random((int) DateTime.Now.Ticks).Next(100);
+            string random1AsString = random1.ToString();
+            temp = random1.ToString("D5");
+            string trunc1 = temp.Substring(temp.Length - 5, 5);
+
+            Console.WriteLine("{0} is {1} characters long.\tTruncated {2} is {3} characters long.", 
+                random1AsString,
+                random1AsString.Length,
+                trunc1, 
+                trunc1.Length);
+        }
+
+#if ASYNC
         private static void AsyncProgramming()
         {
+            //Best practices: https://msdn.microsoft.com/en-us/magazine/jj991977.aspx
+
             //Stopwatch watch = new Stopwatch();
 
             Thread workThread = new Thread(() =>
@@ -150,6 +277,7 @@ namespace Prototype
                     Console.WriteLine("[DoWork] Done with work. Let's have a beer!");
                 });
         }
+#endif
 
         private static void IterateThrough2dArray()
         {
@@ -167,6 +295,9 @@ namespace Prototype
 
         private static void TestUriBuilder()
         {
+            Uri uri = new Uri("https://api.thelevelup.com//v14/access_tokens?t=50&a=45");
+            Console.WriteLine("Absolute: {0}\nTo string: {1}", uri.AbsoluteUri, uri);
+
             UriBuilder builder = new UriBuilder("https://api.thelevelup.com/v14/");
             Console.WriteLine("Host: {0}, Scheme: {1}\n     Uri: {2}\nToString: {3}",
                               builder.Host,
@@ -397,39 +528,6 @@ namespace Prototype
             Console.WriteLine("New Decimal value: {0:F2}", newDecimal);
         }
 
-        private static void TestAlohaItems()
-        {
-            List<AlohaItemTest> items = new List<AlohaItemTest>()
-                {
-                    new AlohaItemTest("invalid item 1", 0, false),
-                    new AlohaItemTest("Burger", 0),
-                    new AlohaItemTest("Fries", 0),
-                    new AlohaItemTest("Extra Salt", 1),
-                    new AlohaItemTest("invalid item", 0, false),
-                    new AlohaItemTest("invalid sub item", 1, false),
-                    new AlohaItemTest("Soup", 0),
-                    new AlohaItemTest("invalid sub item 2", 1, false),
-                    new AlohaItemTest("Chowdah", 1),
-                    new AlohaItemTest("Clam", 2),
-                    new AlohaItemTest("Extra oyster crackers", 2),
-                    new AlohaItemTest("Cold", 1),
-                    new AlohaItemTest("Really Cold", 2),
-                    new AlohaItemTest("Large", 1),
-                    new AlohaItemTest("Bowl", 1),
-                    new AlohaItemTest("Bread", 2),
-                    new AlohaItemTest("Wheat", 3),
-                    new AlohaItemTest("Pepsi Cola", 0),
-                    new AlohaItemTest("Large", 1),
-                };
-            
-            List<ConvertedItem> converted = BuildItemList(new Queue<AlohaItemTest>(items));
-
-            foreach (var convertedItem in converted)
-            {
-                Console.WriteLine(convertedItem.ToString());
-            }
-        }
-
         private static void TestRedactMethod()
         {
             string originalQr = "LU02000ROEUCYCZODZJ1ZND4020000LU";
@@ -440,60 +538,6 @@ namespace Prototype
                               Environment.NewLine,
                               RedactQrData(originalQr),
                               originalQr);
-        }
-
-        private static List<ConvertedItem> BuildItemList(Queue<AlohaItemTest> items)
-        {
-            List<ConvertedItem> convertedItems = new List<ConvertedItem>();
-            ConvertedItem current = null;
-
-            if (null == items)
-            {
-                throw new ArgumentException("NULL item list!");
-            }
-
-            while (items.Count > 0)
-            {
-                //Check to see that the next item is not a higher level than the current Item
-                if (IsNextItemHigherLevel(current, items.Peek()))
-                {
-                    //If the next item it still higher level than current, return the output list
-                    return convertedItems;
-                }
-
-                current = DequeueNextValidItem(items);
-                if (null == current)
-                {
-                    return convertedItems;
-                }
-
-                convertedItems.Add(current);
-
-                AlohaItemTest next = PeekNextValidItem(items);
-                if (null == next)
-                {
-                    //current item is last valid item in input list.
-                    return convertedItems;
-                }
-
-                //next item is higher level than current.
-                //Unwrap the stack and return the output list
-                if (current.Level > next.Level)
-                {
-                    //Return the list with sub items all filled
-                    return convertedItems;
-                }
-
-                //next item is lower level than current
-                //Recusively build the sub item list
-                if (current.Level < next.Level)
-                {
-                    //Add all the sub items to the parent item
-                    current.SubItems.AddRange(BuildItemList(items));
-                }
-            }
-
-            return convertedItems;
         }
 
         private static int CountFlags(TestFlags flags)
@@ -515,67 +559,6 @@ namespace Prototype
             }
 
             return counter;
-        }
-
-        private static ConvertedItem DequeueNextValidItem(Queue<AlohaItemTest> items)
-        {
-            if (items == null || items.Count == 0)
-            {
-                throw new ArgumentException("NULL or empty items list!");
-            }
-
-            AlohaItemTest alohaItem = items.Dequeue();
-
-            //Remove invalid items
-            while (!alohaItem.IsValid)
-            {
-                if (items.Count == 0)
-                {
-                    return null;
-                }
-
-                alohaItem = items.Dequeue(); //remove the invalid item
-            }
-
-            return ConvertedItem.FromAlohaItem(alohaItem);
-        }
-
-        private static AlohaItemTest PeekNextValidItem(Queue<AlohaItemTest> items)
-        {
-            if (null == items)
-            {
-                throw new ArgumentNullException("items");
-            }
-
-            if (items.Count == 0)
-            {
-                return null;
-            }
-
-            AlohaItemTest nextValidItem = items.Peek();
-
-            //Check next item for validity
-            while (!nextValidItem.IsValid)
-            {
-                items.Dequeue(); //remove the invalid item
-
-                if (items.Count > 0)
-                {
-                    nextValidItem = items.Peek();
-                }
-                else
-                {
-                    //current item is last valid item in input list.
-                    return null;
-                }
-            }
-
-            return nextValidItem;
-        }
-
-        private static bool IsNextItemHigherLevel(ConvertedItem current, AlohaItemTest next)
-        {
-            return null != current && current.Level > next.Level;
         }
 
         private static string RedactQrData(string unsanitizedQrCode)

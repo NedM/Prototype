@@ -6,21 +6,36 @@ namespace Prototype
 {
     public class ConvertedItem
     {
-        public static ConvertedItem FromAlohaItem(AlohaItemTest alohaItem)
+        public static bool operator ==(ConvertedItem left, ConvertedItem right)
+        {
+            return Equals(left, right);
+        }
+
+        public static bool operator !=(ConvertedItem left, ConvertedItem right)
+        {
+            return !Equals(left, right);
+        }
+
+        public static ConvertedItem FromMenuItem(MenuItem alohaItem)
         {
             return new ConvertedItem(alohaItem.Name, alohaItem.Level);
         }
 
         public ConvertedItem(string name, int level)
+            : this(name, level, new List<ConvertedItem>())
+        {
+        }
+
+        public ConvertedItem(string name, int level, List<ConvertedItem> subItems)
         {
             this.Name = name;
             this.Level = level;
-            this.SubItems = new List<ConvertedItem>();
+            this.SubItems = subItems;
         }
 
         public string Name { get; set; }
         public int Level { get; set; }
-        public List<ConvertedItem> SubItems { get; private set; }
+        public List<ConvertedItem> SubItems { get; set; }
 
         public override string ToString()
         {
@@ -32,6 +47,44 @@ namespace Prototype
             }
 
             return sb.ToString();
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return Equals((ConvertedItem) obj);
+        }
+
+        protected bool Equals(ConvertedItem other)
+        {
+            return string.Equals(Name, other.Name) &&
+                   Level == other.Level &&
+                   Equals(SubItems, other.SubItems);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                int hashCode = (Name != null ? Name.GetHashCode() : 0);
+                hashCode = (hashCode * 397) ^ Level;
+                hashCode = (hashCode * 397) ^ (SubItems != null ? SubItems.GetHashCode() : 0);
+                return hashCode;
+            }
         }
     }
 }
