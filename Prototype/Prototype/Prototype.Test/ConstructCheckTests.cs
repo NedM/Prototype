@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Diagnostics;
 
@@ -131,7 +132,48 @@ namespace Prototype.Test
                     })
             };
 
+        private readonly List<ConvertedItem> _itemsWithPrices = new List<ConvertedItem>()
+            {
+                new ConvertedItem("Burger", 550, 0),
+                new ConvertedItem("Fries", 25, 0, new List<ConvertedItem>()
+                    {
+                        new ConvertedItem("Extra Salt", 1),
+                    }),
+                new ConvertedItem("Soup", 375, 0, new List<ConvertedItem>()
+                    {
+                        new ConvertedItem("Chowdah", 0, 1, new List<ConvertedItem>()
+                            {
+                                new ConvertedItem("Clam", 2),
+                                new ConvertedItem("Extra oyster crackers", 10, 2),
+                            }),
+                        new ConvertedItem("Cold", 0,  1, new List<ConvertedItem>()
+                            {
+                                new ConvertedItem("Really Cold", 2),
+                            }),
+                        new ConvertedItem("Large", 100, 1),
+                        new ConvertedItem("Bowl", 0, 1, new List<ConvertedItem>()
+                            {
+                                new ConvertedItem("Bread", 150, 2, new List<ConvertedItem>()
+                                    {
+                                        new ConvertedItem("Wheat", 3),
+                                    }),
+                            }),
+                    }),
+                new ConvertedItem("Pepsi Cola", 200, 0, new List<ConvertedItem>()
+                    {
+                        new ConvertedItem("Large", 50, 1),
+                    })
+            };
+
         #endregion MenuItem Data
+
+        [TestMethod]
+        public void ItemDataWithPrices()
+        {
+            string json = JsonConvert.SerializeObject(_itemsWithPrices);
+
+            Trace.WriteLine(json);
+        }
 
         [TestMethod]
         public void AlohaCheckData()
@@ -162,6 +204,7 @@ namespace Prototype.Test
         [TestMethod]
         public void MicrosCheckData_FromArray()
         {
+            //In reference to pos-common PR https://github.com/TheLevelUp/pos-common/pull/220
             List<ConvertedItem> converted = MicrosCheck.BuildItemList(MicrosCheck.ConvertToItems(_microsInputArray, 6));
 
             foreach (var convertedItem in converted)
@@ -194,6 +237,7 @@ namespace Prototype.Test
         [TestMethod]
         public void ConvertMicrosData()
         {
+            //In reference to pos-common PR https://github.com/TheLevelUp/pos-common/pull/220
             string[][] result = MicrosCheck.ConvertToItems(_inputArrayData, 5);
 
             result.Should().NotBeNull();

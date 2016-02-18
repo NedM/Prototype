@@ -26,20 +26,32 @@ namespace Prototype
         {
         }
 
+        public ConvertedItem(string name, int price, int level)
+            : this(name, price, level, new List<ConvertedItem>())
+        {
+        }
+
         public ConvertedItem(string name, int level, List<ConvertedItem> subItems)
+            :this(name, 0, level, subItems)
+        {
+        }
+
+        public ConvertedItem(string name, int price, int level, List<ConvertedItem> subItems)
         {
             this.Name = name;
             this.Level = level;
+            this.Price = price;
             this.SubItems = subItems;
         }
 
         public string Name { get; set; }
         public int Level { get; set; }
+        public int Price { get; set; }
         public List<ConvertedItem> SubItems { get; set; }
 
         public override string ToString()
         {
-            StringBuilder sb = new StringBuilder(string.Format("[{0}] Name: {1}, SubItem Count: {2}.", Level, Name, SubItems.Count));
+            StringBuilder sb = new StringBuilder(string.Format("[{0}] Name: {1}, Price: {2}, SubItem Count: {3}.", Level, Name, Price, SubItems.Count));
 
             foreach (var convertedItem in SubItems)
             {
