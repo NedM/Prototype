@@ -30,16 +30,18 @@ namespace Prototype
         {
             Console.WriteLine("Substring: \"{0}\"", "Hello, world!".Substring(0, 0));
 
-            Console.WriteLine("0: {0}, 1: {1}, 2: {2}, NULL: {3}",
+            Console.WriteLine("0: {0}, 1: {1}, 2: {2}, NULL: {3}, \"1\": {4}, \"0\": {5}, \"2\": {6}",
                               Convert.ToBoolean(0) ? "TRUE" : "FALSE",
                               Convert.ToBoolean(1) ? "TRUE" : "FALSE",
                               Convert.ToBoolean(2) ? "TRUE" : "FALSE",
-                              Convert.ToBoolean(null) ? "TRUE" : "FALSE");
+                              Convert.ToBoolean(null) ? "TRUE" : "FALSE",
+                              bool.Parse("1") ? "TRUE" : "FALSE",
+                              bool.Parse("0") ? "TRUE" : "FALSE",
+                              bool.Parse("2") ? "TRUE" : "FALSE");
             //Console.WriteLine("Environment.NewLine does{0} count as empty string.", string.IsNullOrEmpty(Environment.NewLine) ? null : " NOT");
             //Console.WriteLine(null + "This is a test of the null value.");
             Console.WriteLine("True: {0}, False: {1}", Convert.ToInt32(true), Convert.ToInt32(false));
 
-            TestTryConvert();
             //TestPassByReference();
             //TestRedactMethod();
             //TestTimerBehavior();
@@ -60,62 +62,6 @@ namespace Prototype
             //Console.WriteLine("Original: {0}, Substring(0,6): {1}, Substring(6): {2}", test, test.Substring(0, 6), test.Substring(6));
             //Console.WriteLine("Date YYMMDD format: {0}", DateTime.Now.ToString("yyMMdd", CultureInfo.InvariantCulture));
             Console.WriteLine("Runtime version: " + System.Environment.Version);
-        }
-
-        private static void TestTryConvert()
-        {
-            string result = TryConvert<string>("this is a string");
-            Console.WriteLine("Result of conversion: \"{0}\"", null == result ? "NULL" : result.ToString());
-            string result1 = TryConvert<string>("", "N/A");
-            Console.WriteLine("Result of conversion: \"{0}\"", null == result1 ? "NULL" : result1.ToString());
-            int result2 = TryConvert<int>("1234");
-            Console.WriteLine("Result of conversion: \"{0}\"", null == result2 ? "NULL" : result2.ToString());
-            decimal result3 = TryConvert<decimal>("12.34");
-            Console.WriteLine("Result of conversion: \"{0}\"", null == result3 ? "NULL" : result3.ToString());
-            decimal result4 = TryConvert<decimal>("1111");
-            Console.WriteLine("Result of conversion: \"{0}\"", null == result4 ? "NULL" : result4.ToString());
-            bool result5 = TryConvert<bool>("1", false);
-            Console.WriteLine("Result of conversion: \"{0}\"", null == result5 ? "NULL" : result5.ToString());
-            bool result6 = TryConvert<bool>("true");
-            Console.WriteLine("Result of conversion: \"{0}\"", null == result6 ? "NULL" : result6.ToString());
-            int? result7 = TryConvert<int?>("321", null);
-            Console.WriteLine("Result of conversion: \"{0}\"", null == result7 ? "NULL" : result7.ToString());
-            var result8 = TryConvert<int>("this is not an int");
-            Console.WriteLine("Result of conversion: \"{0}\"", null == result8 ? "NULL" : result8.ToString());
-            string result9 = TryConvert<string>(null, "n/a");
-            Console.WriteLine("Result of conversion: \"{0}\"", null == result9 ? "NULL" : result9.ToString());
-            int? result10 = TryConvert<int?>(null, 0);
-            Console.WriteLine("Result of conversion: \"{0}\"", null == result10 ? "NULL" : result10.ToString());
-        }
-
-        private static T TryConvert<T>(string value, T defaultValue = default(T))
-        {
-            T result;
-
-            if (null == value)
-            {
-                return defaultValue;
-            }
-
-            Type typeT = typeof (T);
-
-            try
-            {
-                //REFLECTION! This is not code that should be used in areas where good performance is desired.
-                if (typeT.IsGenericType && typeT.GetGenericTypeDefinition() == typeof(Nullable<>))
-                {
-                    typeT = Nullable.GetUnderlyingType(typeT);
-                }
-
-                result = (T) Convert.ChangeType(value, typeT);
-            }
-            catch(Exception ex)
-            {
-                Console.WriteLine("Exception: {0}", ex.Message);
-                result = defaultValue;
-            }
-
-            return result;
         }
 
         private static void TestPassByReference()
