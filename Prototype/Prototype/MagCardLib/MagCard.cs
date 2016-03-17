@@ -1,8 +1,14 @@
 ﻿using System;
 using System.Globalization;
+using System.IO;
+using System.Text;
 
 namespace MagCardLib
 {
+    /// <summary>
+    /// Class for handling magnetic card stripe data for Financial cards
+    /// </summary>
+    /// <remarks>Implemented according to http://www.gae.ucm.es/~padilla/extrawork/tracks.html</remarks>
     public class MagCard
     {
         private const char DEFAULT_TRACK1_START_SENTINEL = '%';
@@ -11,26 +17,33 @@ namespace MagCardLib
         private const char DEFAULT_TRACK_END_SENTINEL = '?';
         private const char DEFAULT_TRACK2_START_SENTINEL = ';';
         private const char DEFAULT_TRACK2_FIELD_SEPARATOR = '=';
+        private const char NAME_SEPARATOR_CHAR = '/';
+        private const char INITIAL_SEPARATOR_CHAR = ' ';
+        private const int EXPIRATION_DATE_LENGTH = 4;
+        private const int EXPIRATION_MONTH_LENGTH = 2;
+        private const int EXPIRATION_YEAR_LENGTH = 2;
+        private const int SERVICE_CODE_LENGTH = 3;
+        private const int MASK_LENGTH = 12;
+        private const char MASK_CHAR = '*';
 
         private static char _track1StartSentinel;
         private static char _formatCode;
         private static char _track1FieldSeparator;
-        private static char _track1EndSentinel;
+
+        private static char _trackEndSentinel;
 
         private static char _track2StartSentinel;
         private static char _track2FieldSeparator;
-        private static char _track2EndSentinel;
 
         static MagCard()
         {
             _track1StartSentinel = DEFAULT_TRACK1_START_SENTINEL;
             _formatCode = FINANCIAL_CARD_FORMAT;
             _track1FieldSeparator = DEFAULT_TRACK1_FIELD_SEPARATOR;
-            _track1EndSentinel = DEFAULT_TRACK_END_SENTINEL;
+            _trackEndSentinel = DEFAULT_TRACK_END_SENTINEL;
 
             _track2StartSentinel = DEFAULT_TRACK2_START_SENTINEL;
             _track2FieldSeparator = DEFAULT_TRACK2_FIELD_SEPARATOR;
-            _track2EndSentinel = DEFAULT_TRACK_END_SENTINEL;
         }
 
         public static void Configure(char track1StartSentinel = DEFAULT_TRACK1_START_SENTINEL,
@@ -38,17 +51,15 @@ namespace MagCardLib
                                      char track1FieldSeparator = DEFAULT_TRACK1_FIELD_SEPARATOR,
                                      char track1EndSentinel = DEFAULT_TRACK_END_SENTINEL,
                                      char track2StartSentinel = DEFAULT_TRACK2_START_SENTINEL,
-                                     char track2FieldSeparator = DEFAULT_TRACK2_FIELD_SEPARATOR,
-                                     char track2EndSentinel = DEFAULT_TRACK_END_SENTINEL)
+                                     char track2FieldSeparator = DEFAULT_TRACK2_FIELD_SEPARATOR)
         {
             _track1StartSentinel = track1StartSentinel;
             _formatCode = formatCode;
             _track1FieldSeparator = track1FieldSeparator;
-            _track1EndSentinel = track1EndSentinel;
+            _trackEndSentinel = track1EndSentinel;
 
             _track2StartSentinel = track2StartSentinel;
             _track2FieldSeparator = track2FieldSeparator;
-            _track2EndSentinel = track2EndSentinel;
         }
 
         #region Parsing methods
@@ -64,7 +75,7 @@ namespace MagCardLib
 
             try
             {
-                ParseData(ref card, magCardData);
+                MagCard.ParseData(ref card, magCardData);
             }
             catch (Exception ex)
             {
@@ -76,46 +87,49 @@ namespace MagCardLib
 
         private static void ParseData(ref MagCard card, string magCardData)
         {
-            if (magCardData.StartsWith(_track1StartSentinel.ToString(CultureInfo.InvariantCulture)))
-            {
-                string[] tracks = magCardData.Split(new char[] {_track1EndSentinel}, StringSplitOptions.None);
+            string[] tracks = magCardData.Split(new char[] {_trackEndSentinel}, StringSplitOptions.None);
 
-                if (!string.IsNullOrEmpty(tracks[0]))
+            foreach (string track in tracks)
+            {
+                if (track.Length < 1)
                 {
-                    ParseTrack1Data(ref card, tracks[0]);
+                    continue;
                 }
 
-                if (tracks.Length > 1 && !string.IsNullOrEmpty(tracks[1]))
-                {
-                    ParseTrack2Data(ref card, tracks[1]);
-                }
+                char firstChar = track[0];
 
-                if (tracks.Length > 2 && !string.IsNullOrEmpty(tracks[2]))
+                if (firstChar.Equals(_track1StartSentinel))
                 {
-                    ParseTrack3Data(ref card, tracks[2]);
+                    ParseTrack1Data(ref card, track.TrimStart(_track1StartSentinel).TrimStart(_formatCode));
                 }
-            }
-            else if (magCardData.StartsWith(_track2StartSentinel.ToString()))
-            {
-                ParseTrack2Data(ref card, magCardData);
-            }
-            else
-            {
-                throw new ArgumentException(string.Format("Unexpected start sentinel: \'{0}\'!", magCardData[0]),
-                                            magCardData);
+                else if (firstChar.Equals(_track2StartSentinel))
+                {
+                    ParseTrack2Data(ref card, track.TrimStart(_track2StartSentinel));
+                }
+                else
+                {
+                    ParseTrack3Data(ref card, track);
+                }
             }
         }
 
         private static void ParseTrack3Data(ref MagCard card, string track3Data)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+
+            //No op. Drop data on the floor
         }
 
         private static void ParseTrack2Data(ref MagCard card, string track2Data)
         {
             string[] tokenized = track2Data.Split(_track2FieldSeparator);
 
-            string track2PrimaryAccountNumber = tokenized[0].TrimStart(_track2StartSentinel);
+            if (tokenized.Length != 2)
+            {
+                throw new InvalidDataException("Track 2 data has invalid format! Data: " + track2Data);
+            }
+
+            string track2PrimaryAccountNumber = tokenized[0];
 
             if (!string.IsNullOrEmpty(track2PrimaryAccountNumber) &&
                 (null == card.PrimaryAccountNumber || !track2PrimaryAccountNumber.Equals(card.PrimaryAccountNumber)))
@@ -123,7 +137,9 @@ namespace MagCardLib
                 card.PrimaryAccountNumber = track2PrimaryAccountNumber;
             }
 
-            string track2ExpirationDate = ParseExpirationDate(tokenized[1]);
+            string expirationEtc = tokenized[1];
+
+            string track2ExpirationDate = ParseExpirationDate(expirationEtc);
 
             if (!string.IsNullOrEmpty(track2ExpirationDate) &&
                 (null == card.ExpirationDate || !track2ExpirationDate.Equals(card.ExpirationDate)))
@@ -131,7 +147,7 @@ namespace MagCardLib
                 card.ExpirationDate = track2ExpirationDate;
             }
 
-            string track2ServiceCode = ParseServiceCode(tokenized[1]);
+            string track2ServiceCode = ParseServiceCode(expirationEtc);
 
             if (!string.IsNullOrEmpty(track2ServiceCode) &&
                 (null == card.ServiceCode || !track2ServiceCode.Equals(card.ServiceCode)))
@@ -139,12 +155,13 @@ namespace MagCardLib
                 card.ServiceCode = track2ServiceCode;
             }
 
-            string track2DiscretionaryData = ParseDiscretionaryData(tokenized[1]);
+            string track2DiscretionaryData = ParseDiscretionaryData(expirationEtc);
 
             if (!string.IsNullOrEmpty(track2DiscretionaryData) &&
-                (null == card.DiscretionaryData || !track2DiscretionaryData.Equals(card.DiscretionaryData)))
+                (null == card.DiscretionaryData.Track2 ||
+                 !track2DiscretionaryData.Equals(card.DiscretionaryData.Track2)))
             {
-                card.DiscretionaryData = track2DiscretionaryData;
+                card.DiscretionaryData.Track2 = track2DiscretionaryData;
             }
         }
 
@@ -152,40 +169,71 @@ namespace MagCardLib
         {
             string[] tokenized = track1Data.Split(_track1FieldSeparator);
 
-            card.PrimaryAccountNumber = tokenized[0].Substring(2);
+            card.PrimaryAccountNumber = tokenized[0];
 
-            card.Name = tokenized[1];
+            ParseNameComponents(ref card, tokenized[1]);
 
-            card.ExpirationDate = ParseExpirationDate(tokenized[2]);
-            card.ServiceCode = ParseServiceCode(tokenized[2]);
-            card.DiscretionaryData = ParseDiscretionaryData(tokenized[2]);
+            string expirationEtc = tokenized[2];
+
+            card.ExpirationDate = ParseExpirationDate(expirationEtc);
+            card.ServiceCode = ParseServiceCode(expirationEtc);
+            card.DiscretionaryData.Track1 = ParseDiscretionaryData(expirationEtc);
 
             // DEBUG
             System.Diagnostics.Debug.Assert(string.Concat(card.ExpirationDate,
                                                           card.ServiceCode,
-                                                          card.DiscretionaryData).Equals(tokenized[2]));
+                                                          card.DiscretionaryData).Equals(expirationEtc));
             // END DEBUG
+        }
+
+        private static void ParseNameComponents(ref MagCard card, string fullName)
+        {
+            card.Name = fullName;
+
+            string[] nameComponents = card.Name.Split(NAME_SEPARATOR_CHAR);
+
+            if (nameComponents.Length > 0)
+            {
+                card.LastName = nameComponents[0].Trim();
+
+                if (nameComponents.Length > 1)
+                {
+                    string[] firstNameMiddleInitial = nameComponents[1].Split(INITIAL_SEPARATOR_CHAR);
+
+                    if (firstNameMiddleInitial.Length > 0)
+                    {
+                        card.FirstName = firstNameMiddleInitial[0].Trim();
+                        
+                        if (firstNameMiddleInitial.Length > 1)
+                        {
+                            card.MiddleInitial = firstNameMiddleInitial[1].Trim();
+                        }
+                    }
+                }
+            }
         }
 
         private static string ParseDiscretionaryData(string expirationDateEtc)
         {
-            return expirationDateEtc.Substring(7);
-        }
-
-        private static string ParseServiceCode(string expirationDateEtc)
-        {
-            const int serviceCodeLength = 3;
-            return expirationDateEtc.Substring(4, serviceCodeLength);
+            return expirationDateEtc.Substring(0 + EXPIRATION_DATE_LENGTH + SERVICE_CODE_LENGTH);
         }
 
         private static string ParseExpirationDate(string expirationDateEtc)
         {
-            return expirationDateEtc.Substring(0, 4);
+            return expirationDateEtc.Substring(0, EXPIRATION_DATE_LENGTH);
+        }
+
+        private static string ParseServiceCode(string expirationDateEtc)
+        {
+            return expirationDateEtc.Substring(0 + EXPIRATION_DATE_LENGTH, SERVICE_CODE_LENGTH);
         }
 
         #endregion Parsing methods
 
-        private MagCard() { }
+        private MagCard()
+        {
+            DiscretionaryData = new DiscretionaryData();
+        }
 
         /// <summary>
         /// 1, 3, or 4 characters
@@ -193,25 +241,37 @@ namespace MagCardLib
         /// Pin Verification Value (PVV) = 4 chars
         /// Card Verification Value (CVV) | Card Verification Code (CVC) = 3 chars
         /// </summary>
-        public string DiscretionaryData { get; private set; }
+        public DiscretionaryData DiscretionaryData { get; private set; }
 
         /// <summary>
         /// YYMM format
         /// </summary>
         public string ExpirationDate { get; private set; }
 
-        public string ExpirationMonth { get { return ExpirationDate.Substring(1, 2); } }
+        public string ExpirationMonth
+        {
+            get
+            {
+                return ExpirationDate.Substring(0 + EXPIRATION_YEAR_LENGTH, EXPIRATION_MONTH_LENGTH);
+            }
+        }
 
-        public string ExpirationYear { get { return ExpirationDate.Substring(0, 2); } }
+        public string ExpirationYear { get { return ExpirationDate.Substring(0, EXPIRATION_YEAR_LENGTH); } }
+
+        public string FirstName { get; private set; }
 
         public string Name { get; private set; }
+
+        public string LastName { get; private set; }
+
+        public string MiddleInitial { get; set; }
+
+        public string PAN { get { return PrimaryAccountNumber; } }
 
         /// <summary>
         /// Max 19 characters
         /// </summary>
         public string PrimaryAccountNumber { get; private set; }
-
-        public string PAN { get { return PrimaryAccountNumber; } }
 
         /// <summary>
         /// 3 characters
@@ -225,10 +285,30 @@ namespace MagCardLib
 
         public string ToString(bool formatAsMagCardSwipedData)
         {
-            return string.Concat(Track1DataToString(), Track2DataToString());
+            if (formatAsMagCardSwipedData)
+            {
+                return string.Concat(Track1DataToString(), Track2DataToString());
+            }
+            else
+            {
+                StringBuilder sb = new StringBuilder();
+
+                sb.AppendFormat("Name: {0} {1} {2} ({3})", FirstName, MiddleInitial, LastName, Name);
+
+                sb.AppendFormat(", PAN: {0}", PAN.Replace(PAN.Substring(0, MASK_LENGTH),
+                                                          new string(MASK_CHAR, MASK_LENGTH)));
+
+                sb.AppendFormat(", Service Code: {0}", ServiceCode);
+
+                sb.AppendFormat(", Expires: {0}/{1}", ExpirationMonth, ExpirationYear);
+
+                sb.AppendFormat(", {0}", DiscretionaryData);
+
+                return sb.ToString();
+            }
         }
 
-        private string Track1DataToString()
+        public string Track1DataToString()
         {
             return string.Format("{0}{1}{2}{3}{4}{3}{5}{6}{7}{8}",
                                  _track1StartSentinel,
@@ -238,11 +318,11 @@ namespace MagCardLib
                                  Name,
                                  ExpirationDate,
                                  ServiceCode,
-                                 DiscretionaryData,
-                                 _track1EndSentinel);
+                                 DiscretionaryData.Track1,
+                                 _trackEndSentinel);
         }
 
-        private string Track2DataToString()
+        public string Track2DataToString()
         {
             return string.Format("{0}{1}{2}{3}{4}{5}{6}",
                                  _track2StartSentinel,
@@ -250,8 +330,8 @@ namespace MagCardLib
                                  _track2FieldSeparator,
                                  ExpirationDate,
                                  ServiceCode,
-                                 DiscretionaryData,
-                                 _track2EndSentinel);
+                                 DiscretionaryData.Track2,
+                                 _trackEndSentinel);
         }
     }
 }
