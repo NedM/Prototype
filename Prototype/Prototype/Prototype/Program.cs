@@ -28,19 +28,12 @@ namespace Prototype
         
         public static void Main(string[] args)
         {
+            AsynchronousProgramming.Test();
+
             Console.WriteLine("Substring: \"{0}\"", "Hello, world!".Substring(0, 0));
 
-            Console.WriteLine("0: {0}, 1: {1}, 2: {2}, NULL: {3}, \"1\": {4}, \"0\": {5}, \"2\": {6}",
-                              Convert.ToBoolean(0) ? "TRUE" : "FALSE",
-                              Convert.ToBoolean(1) ? "TRUE" : "FALSE",
-                              Convert.ToBoolean(2) ? "TRUE" : "FALSE",
-                              Convert.ToBoolean(null) ? "TRUE" : "FALSE",
-                              bool.Parse("1") ? "TRUE" : "FALSE",
-                              bool.Parse("0") ? "TRUE" : "FALSE",
-                              bool.Parse("2") ? "TRUE" : "FALSE");
             //Console.WriteLine("Environment.NewLine does{0} count as empty string.", string.IsNullOrEmpty(Environment.NewLine) ? null : " NOT");
             //Console.WriteLine(null + "This is a test of the null value.");
-            Console.WriteLine("True: {0}, False: {1}", Convert.ToInt32(true), Convert.ToInt32(false));
 
             //TestPassByReference();
             //TestRedactMethod();
@@ -173,117 +166,6 @@ namespace Prototype
                 trunc1.Length);
         }
 
-#if ASYNC
-        private static void AsyncProgramming()
-        {
-            //Best practices: https://msdn.microsoft.com/en-us/magazine/jj991977.aspx
-
-            //Stopwatch watch = new Stopwatch();
-
-            Thread workThread = new Thread(() =>
-                {
-                    Console.WriteLine("[Worker Thread] Hello! Thread={0}", Thread.CurrentThread.ManagedThreadId);
-
-                    //watch.Start();
-                    for (int i = 0; i <= 5; i++)
-                    {
-                        Console.WriteLine("[Worker Thread] Waited {0} seconds.", i);
-                        Thread.Sleep(1000);
-                    }
-                    //watch.Stop();
-                    //Console.WriteLine("[Worker Thread] Goodbye. Worked for {0}", watch.Elapsed.ToString());
-                })
-                {
-                    IsBackground = true,
-                    Name = "Worker Thread",
-                    Priority = ThreadPriority.Normal,
-                };
-            workThread.SetApartmentState(ApartmentState.STA);
-
-            Task<string> t = new Task<string>(TestRefNumberRollover);
-
-            Console.WriteLine("[Main thread] = {0}", Thread.CurrentThread.ManagedThreadId);
-
-            Console.WriteLine("[Main thread] Starting Method1Async...");
-            Method1Async();
-            Console.WriteLine("[Main thread] Control returned from calling Method1Async!");
-
-            Console.WriteLine("[Main thread] Starting TestRefNumberRollover task...");
-            t.Start();
-            Console.WriteLine("[Main thread] Control returned from TestRefNumberRollover task start!");
-
-            Console.WriteLine("[Main thread] Starting Worker Thread...");
-            workThread.Start();
-            Console.WriteLine("[Main thread] Control returned from Worker Thread start operation...");
-            //Thread.Sleep(500); //Allow work thread to get processor time
-
-            Console.WriteLine("[Main thread] Starting Method2Async...");
-            Method2Async();
-            Console.WriteLine("[Main thread] Control returned from calling Method2Async!");
-
-            Console.WriteLine("[Main thread] BLOCKED waiting for TestRefNumberRollover task to complete");
-            t.Wait(15000);
-            Console.WriteLine("[Main thread] UNBLOCKED TestRefNumberRollover task completed");
-            Console.WriteLine("[Main thread] TestRefNumberRollover task result: {0}", t.Result);
-
-            Console.WriteLine("[Main thread] BLOCKED waiting for Worder Thread to complete");
-            workThread.Join();
-            Console.WriteLine("[Main thread] UNBLOCKED Worder Thread completed");
-
-            Console.WriteLine("[Main thread] Exiting. All done.");
-
-            //Threads:
-            //Thread 1 -> Main thread, Method1Async, Method2Async
-            //Thread 2 -> DoWork
-            //Thread 3 -> Counter task
-            //Thread 4 -> Worker thread
-            //Thread 5 -> TestRefNumberRollover task
-        }
-
-        private static async void Method1Async()
-        {
-            Console.WriteLine("[Method1Async] Hello! Thread={0}", Thread.CurrentThread.ManagedThreadId);
-
-            await DoWork();
-
-            Console.WriteLine("[Method1Async] Goodbye!");
-        }
-
-        private static async void Method2Async()
-        {
-            Console.WriteLine("[Method2Async] Hello! Thread={0}", Thread.CurrentThread.ManagedThreadId);
-
-            await Task.Run(() =>
-                {
-                    Console.WriteLine("[Method2Async - Task] Starting count... Thread={0}", Thread.CurrentThread.ManagedThreadId);
-                    for (int i = 0; i < 10000; i += 5)
-                    {
-                        if (0 == i%1000)
-                        {
-                            Console.WriteLine("[Method2Async - Task] Done with {0} iterations.", i);
-                            Thread.Sleep(250);
-                        }
-                    }
-                });
-
-            Console.WriteLine("[Method2Async] Goodbye!");
-        }
-
-        private static Task DoWork()
-        {
-            return Task.Run(() =>
-                {
-                    Console.WriteLine("[DoWork] Doing work... Thread={0}", Thread.CurrentThread.ManagedThreadId);
-                    //5 second sleep represents computationally intensive task. 
-                    //Substitute real work (e.g. DB reads or HTTP calls) here
-                    //Task.Delay(7500);
-                    Thread.Sleep(5000);
-
-                    Console.WriteLine("[DoWork] Done with work. Let's have a beer!");
-                });
-        }
-#endif
-
         private static void IterateThrough2dArray()
         {
             string[,] testArray = new string[,]
@@ -295,6 +177,33 @@ namespace Prototype
             for (int i = 0; i < testArray.GetLength(0); i++)
             {
                 Console.WriteLine("{0} - {1}", testArray[i, 0], testArray[i, 1]);
+            }
+        }
+
+        private static void TestBooleanParsing()
+        {
+            Console.WriteLine("True: {0}, False: {1}", Convert.ToInt32(true), Convert.ToInt32(false));
+
+            try
+            {
+                Console.WriteLine("0: {0}, 1: {1}, 2: {2}, NULL: {3}",
+                                  Convert.ToBoolean(0) ? "TRUE" : "FALSE",
+                                  Convert.ToBoolean(1) ? "TRUE" : "FALSE",
+                                  Convert.ToBoolean(2) ? "TRUE" : "FALSE",
+                                  Convert.ToBoolean(null) ? "TRUE" : "FALSE");
+                Console.WriteLine("\"{0}\": {1}, \"{2}\": {3}",
+                                  bool.TrueString,
+                                  bool.Parse(bool.TrueString) ? "TRUE" : "FALSE",
+                                  bool.FalseString,
+                                  bool.Parse(bool.FalseString) ? "TRUE" : "FALSE");
+                Console.WriteLine(" \"1\": {0}, \"0\": {1}, \"2\": {2}",
+                                  bool.Parse("1") ? "TRUE" : "FALSE",
+                                  bool.Parse("0") ? "TRUE" : "FALSE",
+                                  bool.Parse("2") ? "TRUE" : "FALSE");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Exception while converting bools: " + ex.Message);
             }
         }
 

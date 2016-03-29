@@ -1,6 +1,9 @@
-﻿using System;
+﻿#define ASYNC
+
+using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -8,7 +11,83 @@ namespace Prototype
 {
     public class AsynchronousProgramming
     {
-        private static void AsyncProgramming()
+        public static void Test()
+        {
+//            AsyncAwaitProgramming();
+            BackgroundThreadProgramming(15);
+        }
+
+        private static void BackgroundThreadProgramming(int numberOfElementsToCompute)
+        {
+            AutoResetEvent resetEvent = new AutoResetEvent(false);
+
+            Thread thread = new Thread(() =>
+                {
+                    Console.WriteLine("I am Background Thread! My id is {0}. " +
+                                      "Fear me and my mighty background processing!",
+                                      Thread.CurrentThread.ManagedThreadId);
+
+                    Console.WriteLine("The mighty Background thread sayeth:" + Environment.NewLine +
+                                      FibonnaciSequence(numberOfElementsToCompute));
+
+                    Console.WriteLine("Background Thread is done! Background thread awayyyy!");
+                    resetEvent.Set();
+                })
+                {
+                    IsBackground = true,
+                    Priority = ThreadPriority.Normal,
+                    Name = "Background Thread",
+                };
+            thread.SetApartmentState(ApartmentState.STA);
+
+            Console.WriteLine("I am the Master thread. My id is {0}.", Thread.CurrentThread.ManagedThreadId);
+
+            Console.WriteLine("[Master] Starting background thread...");
+            thread.Start();
+
+            Console.WriteLine("[Master] Doing some work of my own...");
+            Console.WriteLine("[Master] " + FibonnaciSequence(10));
+            Console.WriteLine("[Master] Done with my work!");
+
+            Console.WriteLine("[Master] Waiting for Background thread...");
+            WaitHandle.WaitAll(new WaitHandle[] {resetEvent});
+            Console.WriteLine("[Master] Done waiting!");
+        }
+
+        private static string FibonnaciSequence(int numberElements)
+        {
+            int nMinus1 = 1;
+            int n = 1;
+            StringBuilder sb = new StringBuilder();
+
+            if (numberElements < 1)
+            {
+                return string.Empty;
+            }
+            
+            if (numberElements < 2)
+            {
+                return "1";
+            }
+
+            sb.Append("1, 1");
+
+            for (int i = 2; i < numberElements; i++)
+            {
+                int next = n + nMinus1;
+                nMinus1 = n;
+                n = next;
+
+                sb.AppendFormat(", {0}", next);
+            }
+            
+            return sb.ToString();
+        }
+
+        //Use '#define ASYNC' at top of file to enable this block of code. 
+        //!! Requires .NET 4.5 !!
+#if ASYNC
+        private static void AsyncAwaitProgramming()
         {
             //Best practices: https://msdn.microsoft.com/en-us/magazine/jj991977.aspx
 
@@ -55,12 +134,12 @@ namespace Prototype
             Method2Async();
             Console.WriteLine("[Main thread] Control returned from calling Method2Async!");
 
-            Console.WriteLine("[Main thread] BLOCKED waiting for TestRefNumberRollover task to complete");
+            Console.WriteLine("[Main thread] BLOCKED waiting for DoLongWork task to complete");
             bool completeSuccess = t.Wait(15000);
             Console.WriteLine("[Main thread] UNBLOCKED" +
-                              " TestRefNumberRollover task {0}completed successfully within the timeout",
+                              " DoLongWork task {0}completed successfully within the timeout",
                               completeSuccess ? string.Empty : "was NOT ");
-            Console.WriteLine("[Main thread] TestRefNumberRollover task result: {0}", t.Result);
+            Console.WriteLine("[Main thread] DoLongWork task result: {0}", t.Result);
 
             Console.WriteLine("[Main thread] BLOCKED waiting for Worder Thread to complete");
             workThread.Join();
@@ -140,5 +219,6 @@ namespace Prototype
 
             return refNumber;
         }
+#endif
     }
 }
