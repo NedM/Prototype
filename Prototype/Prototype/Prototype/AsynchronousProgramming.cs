@@ -21,14 +21,14 @@ namespace Prototype
         {
             AutoResetEvent resetEvent = new AutoResetEvent(false);
 
-            Thread thread = new Thread(() =>
+            Thread thread = new Thread(async () =>
                 {
                     Console.WriteLine("I am Background Thread! My id is {0}. " +
                                       "Fear me and my mighty background processing!",
                                       Thread.CurrentThread.ManagedThreadId);
 
-                    Console.WriteLine("The mighty Background thread sayeth:" + Environment.NewLine +
-                                      FibonnaciSequence(numberOfElementsToCompute));
+                    string seq = await FibonnaciSequence(numberOfElementsToCompute, 500);
+                    Console.WriteLine("The mighty Background thread sayeth:" + Environment.NewLine + seq);
 
                     Console.WriteLine("Background Thread is done! Background thread awayyyy!");
                     resetEvent.Set();
@@ -46,42 +46,12 @@ namespace Prototype
             thread.Start();
 
             Console.WriteLine("[Master] Doing some work of my own...");
-            Console.WriteLine("[Master] " + FibonnaciSequence(10));
+            Console.WriteLine("[Master] " + FibonnaciSequence(10).Result);
             Console.WriteLine("[Master] Done with my work!");
 
             Console.WriteLine("[Master] Waiting for Background thread...");
             WaitHandle.WaitAll(new WaitHandle[] {resetEvent});
             Console.WriteLine("[Master] Done waiting!");
-        }
-
-        private static string FibonnaciSequence(int numberElements)
-        {
-            int nMinus1 = 1;
-            int n = 1;
-            StringBuilder sb = new StringBuilder();
-
-            if (numberElements < 1)
-            {
-                return string.Empty;
-            }
-            
-            if (numberElements < 2)
-            {
-                return "1";
-            }
-
-            sb.Append("1, 1");
-
-            for (int i = 2; i < numberElements; i++)
-            {
-                int next = n + nMinus1;
-                nMinus1 = n;
-                n = next;
-
-                sb.AppendFormat(", {0}", next);
-            }
-            
-            return sb.ToString();
         }
 
         //Use '#define ASYNC' at top of file to enable this block of code. 
@@ -218,6 +188,38 @@ namespace Prototype
             Console.WriteLine("Goodbye from DoLongTask");
 
             return refNumber;
+        }
+
+        private static Task<string> FibonnaciSequence(int numberElements, int slowingFactor = 0)
+        {
+            int nMinus1 = 1;
+            int n = 1;
+            StringBuilder sb = new StringBuilder();
+
+            if (numberElements < 1)
+            {
+                return Task.FromResult(string.Empty);
+            }
+
+            if (numberElements < 2)
+            {
+                return Task.FromResult("1");
+            }
+
+            sb.Append("1, 1");
+
+            for (int i = 2; i < numberElements; i++)
+            {
+                int next = n + nMinus1;
+                nMinus1 = n;
+                n = next;
+
+                sb.AppendFormat(", {0}", next);
+
+                Thread.Sleep(slowingFactor);
+            }
+
+            return Task.FromResult(sb.ToString());
         }
 #endif
     }
