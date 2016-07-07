@@ -28,7 +28,7 @@ namespace Prototype
         
         public static void Main(string[] args)
         {
-            AsynchronousProgramming.Test();
+            //AsynchronousProgramming.Test();
 
             Console.WriteLine("Substring: \"{0}\"", "Hello, world!".Substring(0, 0));
 
@@ -43,18 +43,105 @@ namespace Prototype
             //TestJoinBehavior();
             //TestInheritance();
             //TestCollections();
+            TestCollectionsCopyBehavior();
             //TestCollectionsInheritance();
             //TestNumberTruncation();
             //TestRefNumberRollover(true);
             //TestUriBuilder();
             //IterateThrough2dArray();
             //AsyncProgramming();
+            //TestSqlSelectStatementFormat();
 
             //string test = "1a2b3c4d5e6f";
             
             //Console.WriteLine("Original: {0}, Substring(0,6): {1}, Substring(6): {2}", test, test.Substring(0, 6), test.Substring(6));
             //Console.WriteLine("Date YYMMDD format: {0}", DateTime.Now.ToString("yyMMdd", CultureInfo.InvariantCulture));
             Console.WriteLine("Runtime version: " + System.Environment.Version);
+        }
+
+        private static void TestCollectionsCopyBehavior()
+        {
+            List<string> original = new List<string>()
+                {
+                    "First", "2nd", "next", "penULTIMATE", "LAST"
+                };
+
+            IList<string> readsNoEdits = new ReadOnlyCollection<string>(original);
+            IList<string> copy = original;
+            string[] array = new string[original.Count];
+            original.CopyTo(array, 0);
+            IList<string> deepCopy = new List<string>(array);
+
+            const string separatorChar = ", ";
+            const int paddedWidth = 64;
+
+            Console.WriteLine(string.Format("Original list: [{0}]",
+                              string.Join(separatorChar, original).TrimEnd(separatorChar.ToCharArray())).PadLeft(paddedWidth));
+
+            copy[2] = copy[2].ToUpper();
+            Console.WriteLine(string.Format("Shallow copied list: [{0}]",
+                                            string.Join(separatorChar, copy).TrimEnd(separatorChar.ToCharArray()))
+                                    .PadLeft(paddedWidth));
+
+            Console.WriteLine(string.Format("Original list (modified): [{0}]",
+                                            string.Join(separatorChar, original).TrimEnd(separatorChar.ToCharArray()))
+                                    .PadLeft(paddedWidth));
+
+            deepCopy[3] = deepCopy[3].ToLower();
+            Console.WriteLine(
+                string.Format("Deep copied list: [{0}]",
+                              string.Join(separatorChar, deepCopy).TrimEnd(separatorChar.ToCharArray())).PadLeft(paddedWidth));
+
+            Console.WriteLine(
+                string.Format("Original list (modified'): [{0}]",
+                              string.Join(separatorChar, original).TrimEnd(separatorChar.ToCharArray())).PadLeft(paddedWidth));
+
+            //readsNoEdits[1] = "1st"; <- runtime exception!
+
+            Console.WriteLine(
+                string.Format("Readonly list: [{0}]",
+                              string.Join(separatorChar, readsNoEdits).TrimEnd(separatorChar.ToCharArray()))
+                      .PadLeft(paddedWidth));
+        }
+
+        private static void TestSqlSelectStatementFormat()
+        {
+            string[] elements = new string[] {"a", "b", "c"};
+
+            string selectTest = string.Format("SELECT {0} FROM MyTable", FormatSqlStringParams(elements));
+
+            Console.WriteLine(selectTest);
+
+            string insertTest = string.Format("INSERT INTO MyTable({0}){2}VALUES ({1});",
+                                              FormatSqlStringParams(elements),
+                                              FormatSqlStringParams(elements, parameterPrefix: "@"),
+                                              Environment.NewLine);
+
+            Console.WriteLine(insertTest);
+        }
+
+        private static string FormatSqlStringParams(string[] columns,
+                                                    char separator = ',',
+                                                    string parameterPrefix = null)
+        {
+            StringBuilder sb = new StringBuilder();
+
+            for (int i = 0; i < columns.Length; i++)
+            {
+                if (i != 0)
+                {
+                    sb.Append(separator);
+                }
+
+                if (!string.IsNullOrWhiteSpace(parameterPrefix))
+                {
+                    sb.Append(parameterPrefix);
+                }
+
+                sb.Append(columns[i]);
+            }
+
+            return sb.ToString();
         }
 
         private static void TestPassByReference()
@@ -334,7 +421,13 @@ namespace Prototype
                     TestFlags.Flag2 | TestFlags.Flag1,
                     TestFlags.Flag4 | TestFlags.Flag2 | TestFlags.Flag1,
                     TestFlags.AllFlags, 
+                    TestFlags.AllFlags ^ TestFlags.Flag2, 
                 };
+
+            Console.WriteLine("AllFlags == TestFlags.Flag4 | TestFlags.Flag2 | TestFlags.Flag1 ? {0}",
+                              TestFlags.AllFlags == (TestFlags.Flag4 | TestFlags.Flag2 | TestFlags.Flag1)
+                                  ? "True"
+                                  : "False");
 
             foreach (var flag in testFlags)
             {

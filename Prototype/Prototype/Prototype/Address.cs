@@ -6,26 +6,47 @@ using System.Text;
 namespace Prototype
 {
     [DataContract(Name = "GeographicLocation", Namespace = "DesignPatterns")]
-    [JsonObject]
+    [JsonObject(MemberSerialization.OptIn)]
     public class GeographicLocation
     {
+        private const double DEFAULT_LAT = 0;
+        private const double DEFAULT_LONG = 0;
+
+        [DataMember(Name = "Latitude")]
+        [JsonProperty(PropertyName = "latitude")]
+        private double? _latitude;
+
+        [DataMember(Name = "Longitude")]
+        [JsonProperty(PropertyName = "longitude")]
+        private double? _longitude;
+
+        public GeographicLocation()
+        {
+            _latitude = null;
+            _longitude = null;
+        }
+
         public GeographicLocation(double latitude, double longitude)
         {
             this.Latitude = latitude;
             this.Longitude = longitude;
         }
 
-        [DataMember(Name = "Latitude")]
-        [JsonProperty(PropertyName = "latitude")]
-        public double Latitude { get; set; }
+        public double Latitude
+        {
+            get { return _latitude.GetValueOrDefault(DEFAULT_LAT); }
+            set { _latitude = value; }
+        }
 
-        [DataMember(Name = "Longitude")]
-        [JsonProperty(PropertyName = "longitude")]
-        public double Longitude { get; set; }
+        public double Longitude
+        {
+            get { return _longitude.GetValueOrDefault(DEFAULT_LONG); }
+            set { _longitude = value; }
+        }
 
         public override string ToString()
         {
-            return string.Format("({0}, {1})", Latitude, Longitude);
+            return string.Format("Lat: {0}, Long: {1}", Latitude, Longitude);
         }
     }
 
